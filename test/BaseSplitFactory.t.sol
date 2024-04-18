@@ -102,4 +102,64 @@ contract BaseSplitFactoryTest is Test {
         console2.log("Splitter address: ", splitter.splitterAddress);
         assertEq(splitter.owner, address(this));
     }
+
+    function test_GetSplittersByParty() public {
+        address[] memory parties = new address[](2);
+        parties[0] = address(0x1);
+        parties[1] = address(0x2);
+
+        uint256[] memory shares = new uint256[](2);
+        shares[0] = 50;
+        shares[1] = 50;
+
+        factory.registerSplitter(address(this), parties, shares);
+        assertEq(factory.getSplitterCount(), 1);
+
+        BaseSplitFactory.Splitter[] memory splitters = factory.getSplittersByParty(address(0x1));
+        console2.log("Splitters length: ", splitters.length);
+        assertEq(splitters.length, 1);
+    }
+
+    function test_deactivateSplitter() public {
+        address[] memory parties = new address[](2);
+        parties[0] = address(0x1);
+        parties[1] = address(0x2);
+
+        uint256[] memory shares = new uint256[](2);
+        shares[0] = 50;
+        shares[1] = 50;
+
+        factory.registerSplitter(address(this), parties, shares);
+        assertEq(factory.getSplitterCount(), 1);
+
+        BaseSplitFactory.Splitter memory splitter = factory.getSplitterByAddress(factory.getAllSplitters()[0].splitterAddress);
+
+        factory.deactivateSplitter(splitter.splitterAddress);
+        console2.log("Splitter isActive: ", splitter.isActive);
+
+        BaseSplitFactory.Splitter memory splitter2 = factory.getSplitterByAddress(factory.getAllSplitters()[0].splitterAddress);
+        console2.log("Splitter isActive: ", splitter2.isActive);
+        
+        assertEq(splitter2.isActive, false);
+    }
+
+    function test_isSplitterActive() public {
+        address[] memory parties = new address[](2);
+        parties[0] = address(0x1);
+        parties[1] = address(0x2);
+
+        uint256[] memory shares = new uint256[](2);
+        shares[0] = 50;
+        shares[1] = 50;
+
+        factory.registerSplitter(address(this), parties, shares);
+        assertEq(factory.getSplitterCount(), 1);
+
+        BaseSplitFactory.Splitter memory splitter = factory.getSplitterByAddress(factory.getAllSplitters()[0].splitterAddress);
+
+        factory.deactivateSplitter(splitter.splitterAddress);
+        console2.log("Splitter isActive: ", splitter.isActive);
+
+        assertEq(factory.isSplitterActive(splitter.splitterAddress), false);
+    }
 }

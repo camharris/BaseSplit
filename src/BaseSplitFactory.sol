@@ -12,6 +12,7 @@ contract BaseSplitFactory {
         address[] parties;
         uint256[] shares;
         address splitterAddress;
+        bool isActive;
     }
 
     Splitter[] public splitters;
@@ -49,8 +50,8 @@ contract BaseSplitFactory {
         }
         require(totalShares == 100, "Total shares must be equal to 100");
 
-        address splitterAddress = address(new BaseSplitter(splitterOwner, parties, factory)); // Create a new instance of BaseSplitter
-        splitters.push(Splitter(splitterOwner, parties, shares, splitterAddress)); // Add the new splitter to the list of splitters
+        address splitterAddress = address(new BaseSplitter(splitterOwner, parties, shares, factory)); // Create a new instance of BaseSplitter
+        splitters.push(Splitter(splitterOwner, parties, shares, splitterAddress, true)); // Add the new splitter to the list of splitters
     }
 
     // Get splitters by owner
@@ -75,6 +76,31 @@ contract BaseSplitFactory {
         }
     }
 
+    // Get splitters by party
+    function getSplittersByParty(address party) public view returns (Splitter[] memory) {
+        Splitter[] memory partySplitters = new Splitter[](splitters.length);
+        uint256 count = 0;
+        for (uint256 i = 0; i < splitters.length; i++) {
+            for (uint256 j = 0; j < splitters[i].parties.length; j++) {
+                if (splitters[i].parties[j] == party) {
+                    partySplitters[count] = splitters[i];
+                    count++;
+                    break;
+                }
+            }
+        }
+        
+        if (count == 0) {
+            return new Splitter[](0); // Return an empty array if no splitters found
+        } else {
+            Splitter[] memory result = new Splitter[](count);
+            for (uint256 i = 0; i < count; i++) {
+                result[i] = partySplitters[i];
+            }
+            return result;
+        }
+    }
+
     // Get all splitters
     function getAllSplitters() public view returns (Splitter[] memory) {
         return splitters;
@@ -94,6 +120,49 @@ contract BaseSplitFactory {
         }
         revert("Splitter not found");
     }
+
+    function deactivateSplitter(address splitterAddress) public {
+        require(msg.sender == owner, "Only owner can deactivate splitters");
+
+        bool found = false;
+        for (uint i = 0; i < splitters.length; i++) {
+            if (splitters[i].splitterAddress == splitterAddress) {
+                splitters[i].isActive = false;
+                found = true;
+                emit SplitterDeactivated(splitterAddress);
+                break;
+            }
+        }
+        require(found, "Splitter not found");
+    }
+
+    function reactivateSplitter(address splitterAddress) public {
+        require(msg.sender == owner, "Only owner can reactivate splitters");
+
+        bool found = false;
+        for (uint i = 0; i < splitters.length; i++) {
+            if (splitters[i].splitterAddress == splitterAddress && !splitters[i].isActive) {
+                splitters[i].isActive = true;
+                found = true;
+                emit SplitterReactivated(splitterAddress);
+                break;
+            }
+        }
+        require(found, "Splitter not found or already active");
+    }
+
+
+    function isSplitterActive(address splitterAddress) public view returns (bool) {
+    for (uint256 i = 0; i < splitters.length; i++) {
+        if (splitters[i].splitterAddress == splitterAddress) {
+            return splitters[i].isActive;
+        }
+    }
+    revert("Splitter not found");
+}
+
+    event SplitterDeactivated(address indexed splitterAddress);
+    event SplitterReactivated(address indexed splitterAddress);
 
     // make payable to receive fees
     receive() external payable {}
