@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "./BaseSplitFactory.sol";
-import "forge-std/Console.sol";
 
 contract BaseSplitter {
     address public owner;
@@ -73,8 +72,6 @@ contract BaseSplitter {
         uint256 feeAmount = calculateFee(balance);
         uint256 ownerAmount = balance - feeAmount;
 
-        console.log("Attempting to withdraw:", ownerAmount);
-        console.log("Fee amount:", feeAmount);
 
         (bool sent, ) = payable(owner).call{value: ownerAmount}("");
         require(sent, "Failed to send Ether");
